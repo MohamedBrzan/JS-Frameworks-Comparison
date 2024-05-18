@@ -1,33 +1,68 @@
-import { Injectable, Res } from "@nestjs/common";
-import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { User, UserSchema } from "../schemas/users.schema";
-import { Model } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
-import { Response } from "express";
+import {
+	HttpException,
+	HttpStatus,
+	Injectable,
+	Param,
+	Query,
+	Res,
+} from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User, UserDocument } from '../schemas/users.schema';
+import { Model, Types } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Response } from 'express';
+
+type ReturnType = Promise<
+	UserDocument &
+		User & {
+			_id: Types.ObjectId;
+		}
+>;
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+	constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async create(@Res() res: Response, createUserDto: CreateUserDto) {
-    const newUser = await this.userModel.create({ ...createUserDto });
-    return res.json(newUser);
-  }
+	async create(
+		@Res() res: Response,
+		createUserDto: CreateUserDto,
+	): Promise<Response<User, Record<string, User>>> {
+		const { email } = createUserDto;
+		let user = await this.userModel.findOne({ email });
+		if (user) throw new HttpException('Duplication Email', HttpStatus.CONFLICT);
+		return res.json(await this.userModel.create({ ...createUserDto }));
+	}
 
-  findAll() {
-    return `This action returns all users`;
-  }
+	async findAll(): Promise<User[]> {
+		return await this.userModel.find();
+	}
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+	async findOne(@Param() id: string): ReturnType {
+		const user = await this.userModel.findById(id);
+		if (user) {
+			return user;
+		}
+		throw new HttpException('user not exist', HttpStatus.NOT_FOUND);
+	}
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+	async update(@Param() id: string, updateUserDto: UpdateUserDto): ReturnType {
+		try {
+			return await this.userModel.findByIdAndUpdate(
+				id,
+				{ ...updateUserDto },
+				{ new: true, runValidators: true, upsert: true },
+			);
+		} catch (err) {
+			throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+	async remove(@Param() id: string): ReturnType {
+		try {
+			return await this.userModel.findByIdAndDelete(id);
+		} catch (err) {
+			throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

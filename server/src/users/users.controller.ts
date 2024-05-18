@@ -1,44 +1,47 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Res,
-} from "@nestjs/common";
-import { UsersService } from "./users.service";
-import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { Response } from "express";
+	Controller,
+	Get,
+	Post,
+	Body,
+	Patch,
+	Param,
+	Delete,
+	Res,
+	HttpStatus,
+	HttpCode,
+	Query,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { Response } from 'express';
 
-@Controller("users")
+@Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Res() res: Response, @Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(res, createUserDto);
-  }
+	@Post()
+	@HttpCode(HttpStatus.CREATED)
+	create(@Res() res: Response, @Body() createUserDto: CreateUserDto) {
+		return this.usersService.create(res, createUserDto);
+	}
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
+	@Get('/all')
+	findAll() {
+		return this.usersService.findAll();
+	}
+	@Get(':id')
+	findOne(@Param('id') id: string) {
+		return this.usersService.findOne(id);
+	}
 
-  @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.usersService.findOne(+id);
-  }
+	@Patch(':id')
+	update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+		return this.usersService.update(id, updateUserDto);
+	}
 
-  @Patch(":id")
-  update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.usersService.remove(+id);
-  }
+	@Delete(':id')
+	remove(@Param('id') id: string) {
+		return this.usersService.remove(id);
+	}
 }
