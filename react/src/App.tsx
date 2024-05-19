@@ -9,7 +9,6 @@ function App() {
 			<Header />
 			<main>
 				<AppRoutes />
-				<h1>ahmed</h1>
 			</main>
 			<Footer />
 		</div>
